@@ -70,6 +70,11 @@
     kscan_he: kscan_he {
         compatible = "zmk,kscan-adc-mux";
         status = "okay";
+        wakeup-source;
+
+        /* SC4823 sleep/wakeup control */
+        sleep-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;   /* P1.12 → HE_SLEEP */
+        wakeup-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;    /* P1.01 → HE_AWAKE */
 
         /* MUX select lines: D8=P1.13(S0), D9=P1.14(S1), D10=P1.15(S2) */
         select-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>,
