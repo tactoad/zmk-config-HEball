@@ -1,0 +1,12 @@
+file_format: "2"
+id: heball
+name: HEball
+type: shield
+url: https://github.com/gohanda11/zmk-config-heball
+siblings:
+  - heball_left
+  - heball_right
+features:
+  - keys
+  - trackball
+  - encoder

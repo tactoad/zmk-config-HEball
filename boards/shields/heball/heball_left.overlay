@@ -1,0 +1,166 @@
+#include "heball.dtsi"
+
+/* Enable ADC and define channels */
+&adc {
+    #address-cells = <1>;
+    #size-cells = <0>;
+    status = "okay";
+
+    /* AM1: MUX_OUT_1: D1 = P0.03 = AIN1 */
+    channel@1 {
+        reg = <1>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN1>;
+        zephyr,resolution = <12>;
+    };
+
+    /* AM2: MUX_OUT_2: D2 = P0.28 = AIN4 */
+    channel@4 {
+        reg = <4>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN4>;
+        zephyr,resolution = <12>;
+    };
+
+    /* AM3: MUX_OUT_3: D3 = P0.29 = AIN5 */
+    channel@5 {
+        reg = <5>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN5>;
+        zephyr,resolution = <12>;
+    };
+
+    /* AM4: MUX_OUT_4: P0.04 = AIN2 */
+    channel@2 {
+        reg = <2>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN2>;
+        zephyr,resolution = <12>;
+    };
+
+    /* Battery voltage monitoring: P0.02 = AIN0 */
+    channel@0 {
+        reg = <0>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN0>;
+        zephyr,resolution = <12>;
+    };
+};
+
+/ {
+    kscan_he: kscan_he {
+        compatible = "zmk,kscan-adc-mux";
+        status = "okay";
+
+        /* MUX select lines: D8=P1.13(S0), D9=P1.14(S1), D10=P1.15(S2) */
+        select-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>,
+                       <&gpio1 14 GPIO_ACTIVE_HIGH>,
+                       <&gpio1 15 GPIO_ACTIVE_HIGH>;
+
+        /* ADC inputs: AIN1(AM1), AIN4(AM2), AIN5(AM3), AIN2(AM4) */
+        io-channels = <&adc 1>, <&adc 4>, <&adc 5>, <&adc 2>;
+
+        num-keys = <27>;
+        scan-period-ms = <8>;
+        idle-scan-period-ms = <40>;
+        idle-enter-ms = <300>;
+        idle-wakeup-delta = <30>;
+        settle-us = <20>;
+        invert-adc;
+        press-threshold = <60>;
+        release-threshold = <30>;
+        debounce-ms = <5>;
+        initial-adc-range = <300>;
+        calibration-duration-ms = <500>;
+
+        /*
+         * mux_map: 8 addresses x 4 ADC channels = 32 entries
+         * value = key index (0-26), 0xFF = unconnected (GND)
+         *
+         * addr  AM1(adc0)  AM2(adc1)  AM3(adc2)  AM4(adc3)
+         *  0    HE3 → 2   HE9 → 8   HE16→15   HE23→22
+         *  1    HE2 → 1   HE8 → 7   HE15→14   HE22→21
+         *  2    HE1 → 0   HE7 → 6   HE14→13   HE21→20
+         *  3    GND→0xFF  HE10→ 9   HE17→16   HE24→23
+         *  4    HE4 → 3   HE11→10   HE18→17   HE25→24
+         *  5    GND→0xFF  GND→0xFF  GND→0xFF  GND→0xFF
+         *  6    HE5 → 4   HE12→11   HE19→18   HE26→25
+         *  7    HE6 → 5   HE13→12   HE20→19   HE27→26
+         */
+        mux_map = <
+             2    8   15   22     /* addr0 */
+             1    7   14   21     /* addr1 */
+             0    6   13   20     /* addr2 */
+          0xFF    9   16   23     /* addr3: AM1 unconnected */
+             3   10   17   24     /* addr4 */
+          0xFF 0xFF 0xFF 0xFF     /* addr5: all unconnected */
+             4   11   18   25     /* addr6 */
+             5   12   19   26     /* addr7 */
+        >;
+    };
+
+    /* Encoder push button SW on P1.03 (active-low, internal pull-up) */
+    kscan_gpio_sw: kscan_gpio_sw {
+        compatible = "zmk,kscan-gpio-direct";
+        input-gpios = <&gpio1 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        wakeup-source;
+    };
+
+    /* Composite kscan: HE keys (col 0-26) + SW push button (col 27) */
+    kscan_composite: kscan_composite {
+        compatible = "zmk,kscan-composite";
+        rows = <1>;
+        columns = <28>;
+
+        he {
+            kscan = <&kscan_he>;
+        };
+
+        sw {
+            kscan = <&kscan_gpio_sw>;
+            col-offset = <27>;
+        };
+    };
+};
+
+/* Disable serial and i2c to free up pins */
+&uart0 { status = "disabled"; };
+&i2c0 { status = "disabled"; };
+
+/ {
+    /* Define aliases for RGB LED widget */
+    aliases {
+        led-red = &led_red;
+        led-green = &led_green;
+        led-blue = &led_blue;
+    };
+
+    /* XIAO nRF52840 User LEDs are active-low */
+    leds {
+        compatible = "gpio-leds";
+        led_red: led_red {
+            gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+        };
+        led_green: led_green {
+            gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+        };
+        led_blue: led_blue {
+            gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        };
+    };
+};
+
+/* Enable left encoder */
+&left_encoder {
+    status = "okay";
+};

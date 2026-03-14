@@ -1,0 +1,227 @@
+#include "heball.dtsi"
+
+/* Right side col-offset: local col 0-24 → global col 28-52 */
+&default_transform {
+    col-offset = <28>;
+};
+
+/* Enable ADC and define channels */
+&adc {
+    #address-cells = <1>;
+    #size-cells = <0>;
+    status = "okay";
+
+    /* AM5: MUX_OUT_1: D1 = P0.03 = AIN1 */
+    channel@1 {
+        reg = <1>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN1>;
+        zephyr,resolution = <12>;
+    };
+
+    /* AM6: MUX_OUT_2: D2 = P0.28 = AIN4 */
+    channel@4 {
+        reg = <4>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN4>;
+        zephyr,resolution = <12>;
+    };
+
+    /* AM7: MUX_OUT_3: D3 = P0.29 = AIN5 */
+    channel@5 {
+        reg = <5>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN5>;
+        zephyr,resolution = <12>;
+    };
+
+    /* AM8: MUX_OUT_4: P0.04 = AIN2 */
+    channel@2 {
+        reg = <2>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN2>;
+        zephyr,resolution = <12>;
+    };
+
+    /* Battery voltage monitoring: P0.02 = AIN0 */
+    channel@0 {
+        reg = <0>;
+        zephyr,gain = "ADC_GAIN_1_6";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,input-positive = <NRF_SAADC_AIN0>;
+        zephyr,resolution = <12>;
+    };
+};
+
+/ {
+    chosen {
+        zephyr,console = &cdc_acm_uart;
+    };
+
+    kscan_he: kscan_he {
+        compatible = "zmk,kscan-adc-mux";
+        status = "okay";
+
+        /* MUX select lines: D8=P1.13(S0), D9=P1.14(S1), D10=P1.15(S2) */
+        select-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>,
+                       <&gpio1 14 GPIO_ACTIVE_HIGH>,
+                       <&gpio1 15 GPIO_ACTIVE_HIGH>;
+
+        /* ADC inputs: AIN1(AM5), AIN4(AM6), AIN5(AM7), AIN2(AM8) */
+        io-channels = <&adc 1>, <&adc 4>, <&adc 5>, <&adc 2>;
+
+        num-keys = <24>;
+        scan-period-ms = <8>;
+        idle-scan-period-ms = <40>;
+        idle-enter-ms = <300>;
+        idle-wakeup-delta = <30>;
+        settle-us = <20>;
+        invert-adc;
+        press-threshold = <60>;
+        release-threshold = <30>;
+        debounce-ms = <5>;
+        initial-adc-range = <300>;
+        calibration-duration-ms = <500>;
+
+        /*
+         * mux_map: 8 addresses x 4 ADC channels = 32 entries
+         * value = local key index (0-23), 0xFF = unconnected (GND)
+         * HE28=0, HE29=1, ..., HE51=23
+         *
+         * addr  AM5(adc0)  AM6(adc1)  AM7(adc2)  AM8(adc3)
+         *  0    HE30→ 2   HE36→ 8   HE43→15   GND→0xFF
+         *  1    HE29→ 1   HE35→ 7   HE42→14   HE49→21
+         *  2    HE28→ 0   HE34→ 6   HE41→13   HE48→20
+         *  3    GND→0xFF  HE37→ 9   HE44→16   GND→0xFF
+         *  4    HE31→ 3   HE38→10   HE45→17   GND→0xFF
+         *  5    GND→0xFF  GND→0xFF  GND→0xFF  GND→0xFF
+         *  6    HE32→ 4   HE39→11   HE46→18   HE50→22
+         *  7    HE33→ 5   HE40→12   HE47→19   HE51→23
+         */
+        mux_map = <
+             2    8   15 0xFF     /* addr0: AM8=GND */
+             1    7   14   21     /* addr1: AM8=HE49 */
+             0    6   13   20     /* addr2: AM8=HE48 */
+          0xFF    9   16 0xFF     /* addr3: AM8=GND */
+             3   10   17 0xFF     /* addr4: AM8=GND */
+          0xFF 0xFF 0xFF 0xFF     /* addr5: all GND */
+             4   11   18   22     /* addr6: AM8=HE50 */
+             5   12   19   23     /* addr7: AM8=HE51 */
+        >;
+    };
+
+    trackball_listener: trackball_listener {
+        status = "okay";
+        compatible = "zmk,input-listener";
+        device = <&trackball>;
+    };
+
+    /* Encoder push button SW_R on P1.03 (active-low, internal pull-up) */
+    kscan_gpio_sw: kscan_gpio_sw {
+        compatible = "zmk,kscan-gpio-direct";
+        input-gpios = <&gpio1 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        wakeup-source;
+    };
+
+    /* Composite kscan: HE keys (col 0-23) + SW_R push button (col 24) */
+    kscan_composite: kscan_composite {
+        compatible = "zmk,kscan-composite";
+        rows = <1>;
+        columns = <25>;
+
+        he {
+            kscan = <&kscan_he>;
+        };
+
+        sw {
+            kscan = <&kscan_gpio_sw>;
+            col-offset = <24>;
+        };
+    };
+};
+
+/* Disable serial and i2c to free up pins */
+&uart0 { status = "disabled"; };
+&i2c0 { status = "disabled"; };
+
+/ {
+    /* Define aliases for RGB LED widget */
+    aliases {
+        led-red = &led_red;
+        led-green = &led_green;
+        led-blue = &led_blue;
+    };
+
+    /* XIAO nRF52840 User LEDs are active-low */
+    leds {
+        compatible = "gpio-leds";
+        led_red: led_red {
+            gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+        };
+        led_green: led_green {
+            gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+        };
+        led_blue: led_blue {
+            gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        };
+    };
+};
+
+/* Enable right encoder */
+&right_encoder {
+    status = "okay";
+};
+
+/* SPI for PMW3610 trackball */
+&pinctrl {
+    spi0_default: spi0_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 0, 5)>,
+                    <NRF_PSEL(SPIM_MOSI, 0, 15)>,
+                    <NRF_PSEL(SPIM_MISO, 0, 15)>;
+        };
+    };
+
+    spi0_sleep: spi0_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 0, 5)>,
+                    <NRF_PSEL(SPIM_MOSI, 0, 15)>,
+                    <NRF_PSEL(SPIM_MISO, 0, 15)>;
+            low-power-enable;
+        };
+    };
+};
+
+&spi0 {
+    status = "okay";
+    compatible = "nordic,nrf-spim";
+    pinctrl-0 = <&spi0_default>;
+    pinctrl-1 = <&spi0_sleep>;
+    pinctrl-names = "default", "sleep";
+    cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>; /* P0.19 */
+
+    trackball: trackball@0 {
+        status = "okay";
+        compatible = "pixart,pmw3610";
+        reg = <0>;
+        spi-max-frequency = <2000000>;
+        irq-gpios = <&gpio1 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>; /* P1.11 */
+        automouse-layer = <1>;
+        scroll-layers = <5>;
+    };
+};
+
+&zephyr_udc0 {
+    cdc_acm_uart: cdc_acm_uart {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};
