@@ -1,0 +1,51 @@
+/*
+ * HEball Right (Central) - UART Serial Split Transport
+ *
+ * 有線接続の配線:
+ *   左 P0.09 (TX) → USB-C D+ → ケーブル → D+ 右 (RX) → 右 P0.09
+ *
+ * P0.09 = LR_COM_R: USB-C D+ 経由で左側 TX に接続 → UART1 RX として使用
+ *                   プルアップでケーブル未接続時の浮遊ノイズを防止
+ * P0.10 = NFC2/TX1: 基板上未接続(×印) → ダミー TX として使用(どこにも繋がらない)
+ *
+ * NOTE: CONFIG_NFCT_PINS_AS_GPIOS=y は heball_right.conf で設定済み
+ */
+
+&pinctrl {
+    heball_split_uart_right_default: heball_split_uart_right_default {
+        /* TX: P0.10 は未接続なので何も送らないが UART1 初期化に必要 */
+        group1 {
+            psels = <NRF_PSEL(UART_TX, 0, 10)>;
+        };
+        /* RX: P0.09 がケーブル経由で左側の TX を受信。未接続時はプルアップ維持 */
+        group2 {
+            psels = <NRF_PSEL(UART_RX, 0, 9)>;
+            bias-pull-up;
+        };
+    };
+    heball_split_uart_right_sleep: heball_split_uart_right_sleep {
+        group1 {
+            psels = <NRF_PSEL(UART_TX, 0, 10)>;
+            low-power-enable;
+        };
+        group2 {
+            psels = <NRF_PSEL(UART_RX, 0, 9)>;
+            low-power-enable;
+            bias-pull-up;
+        };
+    };
+};
+
+&uart1 {
+    status = "okay";
+    current-speed = <115200>;
+    pinctrl-0 = <&heball_split_uart_right_default>;
+    pinctrl-1 = <&heball_split_uart_right_sleep>;
+    pinctrl-names = "default", "sleep";
+};
+
+/ {
+    chosen {
+        zmk,split-uart = &uart1;
+    };
+};
