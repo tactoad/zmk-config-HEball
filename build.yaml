@@ -3,14 +3,18 @@ include:
   # BLE wireless (通常ビルド)
   - board: seeeduino_xiao_ble
     shield: heball_left rgbled_adapter
+    artifact-name: heball-left
   - board: seeeduino_xiao_ble
     shield: heball_right rgbled_adapter
+    artifact-name: heball-right
   # 有線+BLE 両立ビルド (USB-C D+ 経由 UART split)
   - board: seeeduino_xiao_ble
     shield: heball_left rgbled_adapter
     snippet: heball-serial-left
+    artifact-name: heball-left-serial
   - board: seeeduino_xiao_ble
     shield: heball_right rgbled_adapter
     snippet: heball-serial-right
+    artifact-name: heball-right-serial
   - board: seeeduino_xiao_ble
     shield: settings_reset
