@@ -142,7 +142,18 @@
 &uart0 { status = "disabled"; };
 &i2c0 { status = "disabled"; };
 
+/* USB logging console */
+&zephyr_udc0 {
+    cdc_acm_uart: cdc_acm_uart {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};
+
 / {
+    chosen {
+        zephyr,console = &cdc_acm_uart;
+    };
+
     /* Define aliases for RGB LED widget */
     aliases {
         led-red = &led_red;
