@@ -74,10 +74,6 @@
         /* ADC inputs: AIN1(AM1), AIN4(AM2), AIN5(AM3), AIN2(AM4) */
         io-channels = <&adc 1>, <&adc 4>, <&adc 5>, <&adc 2>;
 
-        /* LPCOMP wakeup: AIN4(P0.28=MUX_OUT_2) at MUX addr=4 → HE11(key10) */
-        lpcomp-input = <4>;
-        lpcomp-mux-addr = <4>;
-
         num-keys = <27>;
         scan-period-ms = <8>;
         idle-scan-period-ms = <40>;
