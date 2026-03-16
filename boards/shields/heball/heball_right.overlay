@@ -218,10 +218,16 @@
 
     trackball: trackball@0 {
         status = "okay";
-        compatible = "pixart,paw3222";
+        compatible = "pixart,pmw3610-alt";
         reg = <0>;
         spi-max-frequency = <2000000>;
         irq-gpios = <&gpio1 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>; /* P1.11 */
+        evt-type = <2>;      /* INPUT_EV_REL */
+        x-input-code = <0>;  /* INPUT_REL_X */
+        y-input-code = <1>;  /* INPUT_REL_Y */
+        cpi = <400>;
+        force-awake;
+        wakeup-source;
     };
 };
 
