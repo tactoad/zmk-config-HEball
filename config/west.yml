@@ -16,10 +16,7 @@ manifest:
       revision: main
     - name: zmk-driver-paw3222
       remote: sekigon-gonnoc
-      revision: main
-    - name: zmk-input-processor-threshold-temp-layer
-      remote: gohanda11
-      revision: main
+      revision: torabo-tsuki
     - name: zmk-feature-non-lipo-battery-management
       remote: sekigon-gonnoc
       revision: main

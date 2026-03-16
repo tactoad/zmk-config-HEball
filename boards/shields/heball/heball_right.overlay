@@ -130,14 +130,6 @@
         status = "disabled";
     };
 
-    zip_threshold_temp_layer: input_processor_threshold_temp_layer {
-        compatible = "zmk,input-processor-threshold-temp-layer";
-        #input-processor-cells = <2>;
-        activation-threshold = <100>;
-        require-prior-idle-ms = <0>;
-        excluded-positions = <>;
-    };
-
     /* Encoder push button SW_R on P1.03 (active-low, internal pull-up) */
     kscan_gpio_sw: kscan_gpio_sw {
         compatible = "zmk,kscan-gpio-direct";
@@ -244,7 +236,7 @@
     device = <&trackball>;
     input-processors = <&zip_xy_transform INPUT_TRANSFORM_XY_SWAP>,
                        <&zip_xy_transform INPUT_TRANSFORM_X_INVERT>,
-                       <&zip_threshold_temp_layer 1 500>;
+                       <&zip_temp_layer 1 500>;
 
     scroller {
         layers = <5>;
