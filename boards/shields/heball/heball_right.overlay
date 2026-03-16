@@ -69,6 +69,13 @@
         zephyr,console = &cdc_acm_uart;
     };
 
+    zip_threshold_temp_layer: input_processor_threshold_temp_layer {
+        compatible = "zmk,input-processor-threshold-temp-layer";
+        #input-processor-cells = <2>;
+        activation-threshold = <10>;
+        require-prior-idle-ms = <200>;
+    };
+
     kscan_he: kscan_he {
         compatible = "zmk,kscan-adc-mux";
         status = "okay";
@@ -241,7 +248,7 @@
     status = "okay";
     device = <&trackball>;
     input-processors = <&zip_xy_transform INPUT_TRANSFORM_Y_INVERT>,
-                       <&zip_temp_layer 1 500>;
+                       <&zip_threshold_temp_layer 1 500>;
 
     scroller {
         layers = <5>;

@@ -21,6 +21,9 @@ config SPI
 config PMW3610_ALT
     default y
 
+config ZMK_INPUT_PROCESSOR_THRESHOLD_TEMP_LAYER
+    default y
+
 endif
 
 if SHIELD_HEBALL_LEFT
