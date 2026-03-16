@@ -25,8 +25,5 @@ manifest:
     - name: zmk-rgbled-widget
       remote: gohanda11
       revision: main
-    - name: zmk-input-processor-threshold-temp-layer
-      remote: gohanda11
-      revision: main
   self:
     path: config
