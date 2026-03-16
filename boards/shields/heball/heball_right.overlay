@@ -1,5 +1,6 @@
 #include "heball.dtsi"
 #include <input/processors.dtsi>
+#include <dt-bindings/zmk/input_transform.h>
 
 /* Right side col-offset: local col 0-24 → global col 28-52 */
 &default_transform {
