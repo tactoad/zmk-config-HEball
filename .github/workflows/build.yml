@@ -1,8 +1,9 @@
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-env: ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true
   build:
     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@v0.3-branch
+  env: 
+    ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true
       
     
